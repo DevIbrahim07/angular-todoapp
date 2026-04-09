@@ -1,0 +1,191 @@
+<div class="todo-app">
+  <!-- Header Section -->
+  <header class="app-header">
+    <div class="header-content">
+      <div class="greeting-section">
+        <h1 class="greeting">{{ getGreeting() }} 👋</h1>
+        <p class="date">{{ getFormattedDate() }}</p>
+      </div>
+      <div class="stats-section">
+        <div class="stat-card">
+          <span class="stat-number">{{ todoService.totalCount() }}</span>
+          <span class="stat-label">Total</span>
+        </div>
+        <div class="stat-card active-stat">
+          <span class="stat-number">{{ todoService.activeCount() }}</span>
+          <span class="stat-label">Active</span>
+        </div>
+        <div class="stat-card completed-stat">
+          <span class="stat-number">{{ todoService.completedCount() }}</span>
+          <span class="stat-label">Done</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Progress Bar -->
+    @if (todoService.totalCount() > 0) {
+      <div class="progress-container">
+        <div class="progress-header">
+          <span class="progress-label">Progress</span>
+          <span class="progress-value">{{ todoService.progress() }}%</span>
+        </div>
+        <div class="progress-bar">
+          <div
+            class="progress-fill"
+            [style.width.%]="todoService.progress()"
+          ></div>
+        </div>
+      </div>
+    }
+  </header>
+
+  <!-- Input Section -->
+  <div class="input-section" [class.focused]="isInputFocused()">
+    <div class="input-wrapper">
+      <div class="input-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="16"/>
+          <line x1="8" y1="12" x2="16" y2="12"/>
+        </svg>
+      </div>
+      <input
+        id="todo-input"
+        type="text"
+        class="todo-input"
+        placeholder="What needs to be done?"
+        [value]="newTodoText()"
+        (input)="onInputChange($any($event.target).value)"
+        (keydown.enter)="addTodo()"
+        (focus)="isInputFocused.set(true)"
+        (blur)="isInputFocused.set(false)"
+        autocomplete="off"
+      />
+    </div>
+    <div class="input-actions">
+      <div class="priority-selector">
+        <button
+          id="priority-low"
+          class="priority-btn low"
+          [class.active]="selectedPriority() === 'low'"
+          (click)="onPriorityChange('low')"
+          title="Low Priority"
+        >
+          Low
+        </button>
+        <button
+          id="priority-medium"
+          class="priority-btn medium"
+          [class.active]="selectedPriority() === 'medium'"
+          (click)="onPriorityChange('medium')"
+          title="Medium Priority"
+        >
+          Med
+        </button>
+        <button
+          id="priority-high"
+          class="priority-btn high"
+          [class.active]="selectedPriority() === 'high'"
+          (click)="onPriorityChange('high')"
+          title="High Priority"
+        >
+          High
+        </button>
+      </div>
+      <button
+        id="add-todo-btn"
+        class="add-btn"
+        (click)="addTodo()"
+        [disabled]="!newTodoText().trim()"
+      >
+        Add Task
+      </button>
+    </div>
+  </div>
+
+  <!-- Filter Bar -->
+  @if (todoService.totalCount() > 0) {
+    <div class="filter-bar">
+      <div class="filter-tabs">
+        <button
+          id="filter-all"
+          class="filter-btn"
+          [class.active]="todoService.filter() === 'all'"
+          (click)="setFilter('all')"
+        >
+          All ({{ todoService.totalCount() }})
+        </button>
+        <button
+          id="filter-active"
+          class="filter-btn"
+          [class.active]="todoService.filter() === 'active'"
+          (click)="setFilter('active')"
+        >
+          Active ({{ todoService.activeCount() }})
+        </button>
+        <button
+          id="filter-completed"
+          class="filter-btn"
+          [class.active]="todoService.filter() === 'completed'"
+          (click)="setFilter('completed')"
+        >
+          Completed ({{ todoService.completedCount() }})
+        </button>
+      </div>
+      <div class="bulk-actions">
+        <button
+          id="toggle-all-btn"
+          class="action-btn"
+          (click)="todoService.toggleAll()"
+          title="Toggle all"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 11 12 14 22 4"/>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+          </svg>
+        </button>
+        @if (todoService.completedCount() > 0) {
+          <button
+            id="clear-completed-btn"
+            class="action-btn danger"
+            (click)="todoService.clearCompleted()"
+            title="Clear completed"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            </svg>
+          </button>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Todo List -->
+  <div class="todo-list">
+    @for (todo of todoService.todos(); track todo.id) {
+      <app-todo-item
+        [todo]="todo"
+        (toggled)="todoService.toggleTodo($event)"
+        (deleted)="todoService.deleteTodo($event)"
+        (edited)="todoService.updateTodoText($event.id, $event.text)"
+      />
+    } @empty {
+      <div class="empty-state">
+        @if (todoService.filter() === 'all') {
+          <div class="empty-icon">📝</div>
+          <h3>No tasks yet</h3>
+          <p>Add your first task above to get started!</p>
+        } @else if (todoService.filter() === 'active') {
+          <div class="empty-icon">🎉</div>
+          <h3>All caught up!</h3>
+          <p>No active tasks. Great job!</p>
+        } @else {
+          <div class="empty-icon">📋</div>
+          <h3>Nothing completed yet</h3>
+          <p>Start checking off tasks to see them here.</p>
+        }
+      </div>
+    }
+  </div>
+</div>
